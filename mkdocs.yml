@@ -1,0 +1,38 @@
+site_name: Cashews
+site_description: Async cache utils with simple api to build fast and reliable applications
+site_url: https://pages.com/
+theme: readthedocs
+repo_name: Krukov/cashews
+repo_url: https://github.com/Krukov/cashews
+plugins:
+- search
+nav:
+- Cashews: index.md
+- Intro: intro.md
+- Easy start: easy.md
+- Backends setup: cache/setup.md
+- Cache strategy:
+  - TTL: cache/simple.md
+  - Early expiration: cache/early.md
+  - Hits count expiration: cache/hit.md
+  - Failover: cache/fail.md
+- Invalidation:
+  - cache/invalidation.md
+- Cache base tools:
+  - Circuit Breaker: circuit-breaker.md
+  - Lock: lock.md
+  - Rate Limit: rate-limit.md
+- Low Level api:  low-level.md
+- Advance: advance.md
+markdown_extensions:
+- toc:
+    permalink: true
+- admonition
+- codehilite
+- extra
+
+extra:
+  social:
+  - icon: fontawesome/brands/github-alt
+    link: https://github.com/tiangolo/typer
+
