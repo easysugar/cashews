@@ -69,3 +69,43 @@ def _key_function(user, account_id):
 @cache(_key_function, timedelta(hours=3))
 async def get_user_account(*, user: User, account_id: int):
     ...
+    
+    
+from cashews import cache
+
+@app.middleware("http")
+async def disable_cache_for_no_store(request: Request, call_next):
+    if request.method.lower() != "get":
+        return await call_next(request)
+    if request.headers.get("Cache-Control") in ("no-store", "no-cache"):
+        with cache.disabling("get", "set"):
+            return await call_next(request)
+    return await call_next(request)
+
+
+from cashews import cache
+
+@app.middleware("http")
+async def add_from_cache_headers(request: Request, call_next):
+    with cache.detect as detector:
+        response = await call_next(request)
+        if request.method.lower() != "get":
+            return response
+        if detector.calls:
+            response.headers["X-From-Cache-keys"] = ";".join(detector.calls.keys())
+    return response
+
+
+from cashews import cache
+
+@app.get("/friends")
+@cache(ttl="10h")
+async def get_fiends(user: User = Depends(get_current_user)):
+    ...
+
+
+@app.post("/friends")
+@cache.invalidate(get_fiends)
+async def create_friend(user: User = Depends(get_current_user)):
+    ...
+
