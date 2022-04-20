@@ -109,3 +109,12 @@ async def get_fiends(user: User = Depends(get_current_user)):
 async def create_friend(user: User = Depends(get_current_user)):
     ...
 
+
+    
+from cashews import cache
+
+cache.setup("redis://")
+
+@cache(ttl="3h", key="user:{user.id}:{account_id}")
+async def get_user_account(user: User, account_id: int) -> Account:
+    ...
