@@ -192,6 +192,9 @@ class Cache(Backend):
     def delete_match(self, pattern: str):
         return self._with_middlewares("delete_match", pattern)(pattern=pattern)
 
+    def get_match(self, pattern: str, count: int = None):
+        return self._with_middlewares("get_match", pattern)(pattern=pattern, count=count)
+
     def expire(self, key: str, timeout: TTL):
         return self._with_middlewares("expire", key)(key=key, timeout=ttl_to_seconds(timeout))
 
