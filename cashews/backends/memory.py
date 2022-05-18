@@ -61,7 +61,7 @@ class Memory(Backend):
     async def get_raw(self, key: str):
         return self.store.get(key)
 
-    async def get_many(self, *keys: str) -> Tuple:
+    async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return tuple([self._get(key) for key in keys])
 
     async def keys_match(self, pattern: str):

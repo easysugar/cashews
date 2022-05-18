@@ -26,6 +26,7 @@ https://redis.io/topics/client-side-caching
 
 import asyncio
 import logging
+from typing import Any, Tuple
 
 try:
     from redis.exceptions import ConnectionError as RedisConnectionError
@@ -119,7 +120,7 @@ class BcastClientSide(Redis):
         await self._mark_as_recently_updated(key)
         return await super().set(self._prefix + key, value, *args, **kwargs)
 
-    async def get_many(self, *keys):
+    async def get_many(self, *keys) -> Tuple[Any, ...]:
         values = await self._local_cache.get_many(*keys)
         missed_keys = [self._prefix + key for key, value in zip(keys, values) if value is None]
         missed_values = await super().get_many(*missed_keys)

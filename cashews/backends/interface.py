@@ -41,7 +41,7 @@ class Backend:
     async def get_raw(self, key: str) -> Any:
         ...
 
-    async def get_many(self, *keys: str) -> Tuple[Any]:
+    async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         ...
 
     async def exists(self, key) -> bool:
@@ -149,7 +149,7 @@ class ProxyBackend(Backend):
     def get_raw(self, key: str) -> Any:
         return self._target.get_raw(key)
 
-    def get_many(self, *keys: str) -> Tuple[Any]:
+    def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return self._target.get_many(keys)
 
     def get_match(self, pattern: str, count: int = 100):

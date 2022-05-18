@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, AsyncIterator, List, Optional, Union
+from typing import Any, AsyncIterator, List, Optional, Union, Tuple
 
 from ..interface import Backend
 from .client import SafeRedis
@@ -57,7 +57,7 @@ class _Redis(Backend):
         self._client = client_class(connection_pool=self._pool_class.from_url(self._address, **self._kwargs))
         self.__is_init = True
 
-    async def get_many(self, *keys: str):
+    async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return await self._client.mget(keys[0], *keys[1:])
 
     async def clear(self):

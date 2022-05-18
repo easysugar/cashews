@@ -69,7 +69,7 @@ class DiskCache(Backend):
     async def get_raw(self, key: str) -> Any:
         return self._cache.get(key)
 
-    async def get_many(self, *keys: str) -> Tuple[Any]:
+    async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return await self._run_in_executor(self._get_many, *keys)
 
     def _get_many(self, *keys):

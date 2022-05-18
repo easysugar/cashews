@@ -188,7 +188,7 @@ class Cache(Backend):
         async for key, value in (await call(pattern, batch_size)):
             yield key, value
 
-    def get_many(self, *keys: str):
+    def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return self._with_middlewares("get_many", keys[0])(*keys)
 
     def get_bits(self, key: str, *indexes: int, size: int = 1):
