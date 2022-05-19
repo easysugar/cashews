@@ -2,7 +2,7 @@ import asyncio
 import re
 import time
 from collections import OrderedDict
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, AsyncIterator
 
 from .interface import Backend
 
@@ -33,7 +33,7 @@ class Memory(Backend):
         self.__remove_expired_task = asyncio.create_task(self._remove_expired())
 
     @property
-    def is_init(self):
+    def is_init(self) -> bool:
         return self.__is_init
 
     async def _remove_expired(self):
@@ -42,7 +42,7 @@ class Memory(Backend):
                 await self.get(key)
             await asyncio.sleep(self._check_interval)
 
-    async def clear(self):
+    async def clear(self) -> None:
         self.store = OrderedDict()
 
     async def set(self, key: str, value: Any, expire: Union[None, float, int] = None, exist=None) -> bool:
@@ -52,7 +52,7 @@ class Memory(Backend):
         self._set(key, value, expire)
         return True
 
-    async def set_raw(self, key: str, value: Any, **kwargs):
+    async def set_raw(self, key: str, value: Any, **kwargs) -> bool:
         self.store[key] = value
 
     async def get(self, key: str, default: Optional[Any] = None) -> Any:
@@ -64,14 +64,14 @@ class Memory(Backend):
     async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return tuple([self._get(key) for key in keys])
 
-    async def keys_match(self, pattern: str):
+    async def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         pattern = pattern.replace("*", ".*")
         regexp = re.compile(pattern)
         for key in dict(self.store):
             if regexp.fullmatch(key):
                 yield key
 
-    async def incr(self, key: str):
+    async def incr(self, key: str) -> int:
         value = int(self._get(key, 0)) + 1
         self._set(key=key, value=value)
         return value
@@ -88,11 +88,11 @@ class Memory(Backend):
             return True
         return False
 
-    async def delete_match(self, pattern: str):
+    async def delete_match(self, pattern: str) -> bool:
         async for key in self.keys_match(pattern):
             self._delete(key)
 
-    async def get_match(self, pattern: str, batch_size: int = None):
+    async def get_match(self, pattern: str, batch_size: int = None) -> AsyncIterator[Tuple[str, Any]]:
         async for key in self.keys_match(pattern):
             yield key, self._get(key)
 
@@ -113,14 +113,14 @@ class Memory(Backend):
     async def ping(self, message: Optional[bytes] = None):
         return b"PONG" if message in (None, b"PING") else message
 
-    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int]:
+    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int, ...]:
         array: Bitarray = self._get(key, default=Bitarray("0"))
         result = []
         for index in indexes:
             result.append(array.get(index, size))
         return tuple(result)
 
-    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int]:
+    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int, ...]:
         array: Bitarray = self._get(key)
         if array is None:
             array = Bitarray("0")

@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Coroutine
 
 from cashews.formatter import get_template_for_key
 
@@ -20,7 +20,7 @@ class IndexRedis(Redis):
         self._index_field = index_field
         super().__init__(*args, **kwargs)
 
-    def _get_index_and_key(self, key) -> Tuple[str, str]:
+    def _get_index_and_key(self, key: str) -> Tuple[str, str]:
         template, groups = get_template_for_key(key)
         if not template or self._index_field not in groups:
             return "", key
@@ -39,7 +39,7 @@ class IndexRedis(Redis):
             return self._client.hget(index, key)
         return super().get(key)
 
-    def delete(self, key):
+    def delete(self, key: str):
         index, key = self._get_index_and_key(key)
         if index:
             return self._client.hdel(index, key)

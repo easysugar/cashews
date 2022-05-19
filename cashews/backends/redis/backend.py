@@ -46,10 +46,10 @@ class _Redis(Backend):
         self.__is_init = False
 
     @property
-    def is_init(self):
+    def is_init(self) -> bool:
         return self.__is_init
 
-    async def init(self):
+    async def init(self) -> None:
         if not self._safe:
             client_class = Redis
         else:
@@ -60,7 +60,7 @@ class _Redis(Backend):
     async def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return await self._client.mget(keys[0], *keys[1:])
 
-    async def clear(self):
+    async def clear(self) -> None:
         return await self._client.flushdb()
 
     async def set(self, key: str, value: Any, expire: Union[None, float, int] = None, exist=None):
@@ -104,10 +104,10 @@ class _Redis(Backend):
             self._sha["UNLOCK"] = await self._client.script_load(_UNLOCK.replace("\n", " "))
         return await self._client.evalsha(self._sha["UNLOCK"], 1, key, value)
 
-    async def delete(self, key):
+    async def delete(self, key: str):
         return await self._client.unlink(key)
 
-    async def exists(self, key) -> bool:
+    async def exists(self, key: str) -> bool:
         return bool(await self._client.exists(key))
 
     async def _scan(self, pattern: str, batch_size=100) -> AsyncIterator[List[bytes]]:
@@ -116,12 +116,12 @@ class _Redis(Backend):
             cursor, keys = await self._client.scan(cursor, match=pattern, count=batch_size)
             yield keys
 
-    async def keys_match(self, pattern: str):
+    async def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         async for keys in self._scan(pattern):
             for key in keys:
                 yield key
 
-    async def delete_match(self, pattern: str):
+    async def delete_match(self, pattern: str) -> bool:
         if "*" not in pattern:
             return await self._client.unlink(pattern)
         keys = []
@@ -130,7 +130,7 @@ class _Redis(Backend):
         if keys:
             return await self._client.unlink(keys[0], *keys[1:])
 
-    async def get_match(self, pattern: str, batch_size: int = 100):
+    async def get_match(self, pattern: str, batch_size: int = 100) -> AsyncIterator[Tuple[str, Any]]:
         async for keys in self._scan(pattern, batch_size):
             if not keys:
                 continue
@@ -146,10 +146,10 @@ class _Redis(Backend):
     async def get(self, key: str, default=None) -> Any:
         return await self._client.get(key)
 
-    async def incr(self, key: str):
+    async def incr(self, key: str) -> int:
         return await self._client.incr(key)
 
-    async def get_bits(self, key: str, *indexes: int, size: int = 1):
+    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int, ...]:
         """
         https://redis.io/commands/bitfield
         """
@@ -158,7 +158,7 @@ class _Redis(Backend):
             bitops.get(fmt=f"u{size}", offset=f"#{index}")
         return tuple(await bitops.execute())
 
-    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1):
+    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int, ...]:
         bitops = self._client.bitfield(key)
         for index in indexes:
             bitops.incrby(fmt=f"u{size}", offset=f"#{index}", increment=by, overflow="SAT")
@@ -170,12 +170,12 @@ class _Redis(Backend):
             return message
         return b"PONG"
 
-    async def set_raw(self, key: str, value: Any, **kwargs):
+    async def set_raw(self, key: str, value: Any, **kwargs) -> bool:
         return await self._client.set(key, value, **kwargs)
 
     async def get_raw(self, key: str) -> Any:
         return await self._client.get(key)
 
-    def close(self):
+    def close(self) -> None:
         self._client = None
         self.__is_init = False

@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import contextmanager
 from functools import partial, wraps
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, Type, Union, AsyncIterator
 from urllib.parse import parse_qsl, urlparse
 
 from . import decorators, validation
@@ -166,7 +166,7 @@ class Cache(Backend):
     def get_raw(self, key: str) -> Any:
         return self._with_middlewares("get_raw", key)(key=key)
 
-    async def keys_match(self, pattern: str):
+    async def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         backend, middlewares = self._get_backend_and_config(pattern)
 
         async def call(_pattern):
@@ -177,7 +177,7 @@ class Cache(Backend):
         async for key in (await call(pattern)):
             yield key
 
-    async def get_match(self, pattern: str, batch_size: int = 100):
+    async def get_match(self, pattern: str, batch_size: int = 100) -> AsyncIterator[Tuple[str, Any]]:
         backend, middlewares = self._get_backend_and_config(pattern)
 
         async def call(_pattern, _batch_size):
@@ -203,7 +203,7 @@ class Cache(Backend):
     def delete(self, key: str):
         return self._with_middlewares("delete", key)(key=key)
 
-    def delete_match(self, pattern: str):
+    def delete_match(self, pattern: str) -> bool:
         return self._with_middlewares("delete_match", pattern)(pattern=pattern)
 
     def expire(self, key: str, timeout: TTL):
@@ -228,7 +228,7 @@ class Cache(Backend):
         message = b"PING" if message is None else message
         return self._with_middlewares("ping", message.decode())(message=message)
 
-    async def clear(self):
+    async def clear(self) -> None:
         for backend, _ in self._backends.values():
             await self._with_middlewares_for_backend("clear", backend, self._default_middlewares)()
 

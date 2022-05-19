@@ -130,7 +130,7 @@ class BcastClientSide(Redis):
                 await self._local_cache.set(key, missed.get(self._prefix + key))
         return [missed.get(key, value) for key, value in zip(keys, values)]
 
-    async def incr(self, key):
+    async def incr(self, key: str) -> int:
         await self._local_cache.incr(key)
         await self._mark_as_recently_updated(key)
         return await super().incr(self._prefix + key)
@@ -139,7 +139,7 @@ class BcastClientSide(Redis):
         await self._local_cache.delete(key)
         return await super().delete(self._prefix + key)
 
-    async def delete_match(self, pattern: str):
+    async def delete_match(self, pattern: str) -> bool:
         await self._local_cache.delete_match(pattern)
         return await super().delete_match(self._prefix + pattern)
 
@@ -180,7 +180,7 @@ class BcastClientSide(Redis):
     async def get_size(self, key: str) -> int:
         return await super().get_size(self._prefix + key)
 
-    async def clear(self):
+    async def clear(self) -> None:
         await self._local_cache.clear()
         return await super().clear()
 

@@ -1,6 +1,6 @@
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, AsyncIterator
 
 
 class LockedException(Exception):
@@ -17,7 +17,7 @@ class Backend:
         ...
 
     @property
-    def is_init(self):
+    def is_init(self) -> bool:
         ...
 
     def close(self):
@@ -32,7 +32,7 @@ class Backend:
     ) -> bool:
         ...
 
-    async def set_raw(self, key: str, value: Any, **kwargs):
+    async def set_raw(self, key: str, value: Any, **kwargs) -> bool:
         ...
 
     async def get(self, key: str, default: Optional[Any] = None) -> Any:
@@ -47,7 +47,7 @@ class Backend:
     async def exists(self, key) -> bool:
         ...
 
-    async def keys_match(self, pattern: str):
+    async def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         ...
 
     async def incr(self, key: str) -> int:
@@ -56,10 +56,10 @@ class Backend:
     async def delete(self, key: str):
         ...
 
-    async def delete_match(self, pattern: str):
+    async def delete_match(self, pattern: str) -> bool:
         ...
 
-    async def get_match(self, pattern: str, batch_size: int = 100):
+    async def get_match(self, pattern: str, batch_size: int = 100) -> AsyncIterator[Tuple[str, Any]]:
         ...
 
     async def expire(self, key: str, timeout: Union[float, int]):
@@ -68,10 +68,10 @@ class Backend:
     async def get_expire(self, key: str) -> int:
         ...
 
-    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int]:
+    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int, ...]:
         ...
 
-    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int]:
+    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int, ...]:
         ...
 
     async def get_size(self, key: str) -> int:
@@ -83,7 +83,7 @@ class Backend:
     async def ping(self, message: Optional[bytes] = None) -> bytes:
         ...
 
-    async def clear(self):
+    async def clear(self) -> None:
         ...
 
     async def set_lock(self, key: str, value: Any, expire: Union[float, int]) -> bool:
@@ -128,7 +128,7 @@ class ProxyBackend(Backend):
         super().__init__()
 
     @property
-    def is_init(self):
+    def is_init(self) -> bool:
         return self._target.is_init
 
     def set(
@@ -140,7 +140,7 @@ class ProxyBackend(Backend):
     ) -> bool:
         return self._target.set(key, value, expire=expire, exist=exist)
 
-    def set_raw(self, key: str, value: Any, **kwargs):
+    def set_raw(self, key: str, value: Any, **kwargs) -> bool:
         return self._target.set_raw(key, value, **kwargs)
 
     def get(self, key: str, default: Optional[Any] = None) -> Any:
@@ -152,10 +152,10 @@ class ProxyBackend(Backend):
     def get_many(self, *keys: str) -> Tuple[Any, ...]:
         return self._target.get_many(keys)
 
-    def get_match(self, pattern: str, count: int = 100):
+    def get_match(self, pattern: str, count: int = 100) -> AsyncIterator[Tuple[str, Any]]:
         return self._target.get_match(pattern, count)
 
-    def exists(self, key):
+    def exists(self, key) -> bool:
         return self._target.exists(key)
 
     def incr(self, key: str) -> int:
@@ -164,7 +164,7 @@ class ProxyBackend(Backend):
     def delete(self, key: str):
         return self._target.delete(key)
 
-    def delete_match(self, pattern: str):
+    def delete_match(self, pattern: str) -> bool:
         return self._target.delete_match(pattern)
 
     def expire(self, key: str, timeout: Union[int, float]):
@@ -173,10 +173,10 @@ class ProxyBackend(Backend):
     def get_expire(self, key: str) -> int:
         return self._target.get_expire(key)
 
-    def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int]:
+    def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int, ...]:
         return self._target.get_bits(key, *indexes, size=size)
 
-    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int]:
+    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int, ...]:
         return self._target.incr_bits(key, *indexes, size=size, by=by)
 
     def ping(self, message: Optional[bytes] = None) -> str:
@@ -184,7 +184,7 @@ class ProxyBackend(Backend):
             return self._target.ping(message)
         return self._target.ping()
 
-    def clear(self):
+    def clear(self) -> None:
         return self._target.clear()
 
     def close(self):
@@ -204,8 +204,8 @@ class ProxyBackend(Backend):
     def unlock(self, key: str, value: str) -> bool:
         return self._target.unlock(key, value)
 
-    def keys_match(self, pattern: str):
+    def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         return self._target.keys_match(pattern)
 
-    def get_size(self, key):
+    def get_size(self, key: str) -> int:
         return self._target.get_size(key)

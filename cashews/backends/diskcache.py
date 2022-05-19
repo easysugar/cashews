@@ -1,7 +1,7 @@
 import asyncio
 import re
 from datetime import datetime
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, AsyncIterator
 
 from diskcache import Cache, FanoutCache
 
@@ -30,7 +30,7 @@ class DiskCache(Backend):
         return await asyncio.get_running_loop().run_in_executor(None, call, *args)
 
     @property
-    def is_init(self):
+    def is_init(self) -> bool:
         return self.__is_init
 
     def close(self):
@@ -60,7 +60,7 @@ class DiskCache(Backend):
                 return False
         return self._cache.set(key, value, expire)
 
-    async def set_raw(self, key: str, value: Any, **kwargs):
+    async def set_raw(self, key: str, value: Any, **kwargs) -> bool:
         return self._cache.set(key, value, **kwargs)
 
     async def get(self, key: str, default: Optional[Any] = None) -> Any:
@@ -81,7 +81,7 @@ class DiskCache(Backend):
     def _exists(self, key) -> bool:
         return key in self._cache
 
-    async def keys_match(self, pattern: str):
+    async def keys_match(self, pattern: str) -> AsyncIterator[bytes]:
         if not self._sharded:
             for key in await self._run_in_executor(self._keys_match, pattern):
                 yield key
@@ -93,7 +93,7 @@ class DiskCache(Backend):
             if regexp.fullmatch(key):
                 yield key
 
-    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int]:
+    async def get_bits(self, key: str, *indexes: int, size: int = 1) -> Tuple[int, ...]:
         value = await self.get(key, default=0)
         array = Bitarray(str(value))
         result = []
@@ -101,7 +101,7 @@ class DiskCache(Backend):
             result.append(array.get(index, size))
         return tuple(result)
 
-    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int]:
+    async def incr_bits(self, key: str, *indexes: int, size: int = 1, by: int = 1) -> Tuple[int, ...]:
         value = await self.get(key, default=0)
         array = Bitarray(str(value))
         result = []
@@ -117,14 +117,14 @@ class DiskCache(Backend):
     async def delete(self, key: str):
         return await self._run_in_executor(self._cache.delete, key)
 
-    async def delete_match(self, pattern: str):
+    async def delete_match(self, pattern: str) -> bool:
         return await self._run_in_executor(self._delete_match, pattern)
 
     def _delete_match(self, pattern: str):
         for key in self._keys_match(pattern):
             self._cache.delete(key)
 
-    async def get_match(self, pattern: str, batch_size: int = None):
+    async def get_match(self, pattern: str, batch_size: int = None) -> AsyncIterator[Tuple[str, Any]]:
         if not self._sharded:
             for key in await self._run_in_executor(self._keys_match, pattern):
                 yield key, self._cache.get(key)
@@ -147,7 +147,7 @@ class DiskCache(Backend):
     async def ping(self, message: Optional[bytes] = None) -> bytes:
         return message or b"PONG"
 
-    async def clear(self):
+    async def clear(self) -> None:
         await self._run_in_executor(self._cache.clear)
 
     async def set_lock(self, key: str, value: Any, expire: Union[float, int]) -> bool:
